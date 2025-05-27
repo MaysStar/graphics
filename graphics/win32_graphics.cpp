@@ -75,13 +75,21 @@ void  DrawTriangle(v3* Points, v3* Colors)
 				f32 T1 = -CrossLength2 / BaryCenrticDiv;
 				f32 T2 = -CrossLength0 / BaryCenrticDiv;
 
-				v3 FinalColor = T0 * Colors[0] + T1 * Colors[1] + T2 * Colors[2];
+				f32 Depth = T0 * ( 1.0f / Points[0].z) + T1 * (1.0f / Points[1].z) + T2 * (1.0f / Points[2].z);
+				Depth = 1.0f / Depth;
 
-				FinalColor = 255.0f * FinalColor;
+				if (Depth < GlobalState.DepthBuffer[PixelId])
+				{
+					v3 FinalColor = T0 * Colors[0] + T1 * Colors[1] + T2 * Colors[2];
 
-				u32 FinalColorU32 = ((u32)0xFF << 24) | ((u32)FinalColor.r << 16) | ((u32)FinalColor.g << 8) | (u32)FinalColor.b;
+					FinalColor = 255.0f * FinalColor;
 
-				GlobalState.FrameBufferPixels[PixelId] = FinalColorU32;
+					u32 FinalColorU32 = ((u32)0xFF << 24) | ((u32)FinalColor.r << 16) | ((u32)FinalColor.g << 8) | (u32)FinalColor.b;
+
+					GlobalState.FrameBufferPixels[PixelId] = FinalColorU32;
+
+					GlobalState.DepthBuffer[PixelId] = Depth;
+				}
 			}
 		}
 	}
@@ -164,11 +172,13 @@ LRESULT Win32WindowCallBack(HWND WindowHandle,
 	{
 		RECT ClientRect = {};
 		Assert(GetClientRect(GlobalState.WindowHandle, &ClientRect));
-		/*GlobalState.FrameBufferWidth = ClientRect.right - ClientRect.left;
-		GlobalState.FrameBufferHeight = ClientRect.bottom - ClientRect.top;*/
-		GlobalState.FrameBufferWidth = 300;
-		GlobalState.FrameBufferHeight = 300;
+		GlobalState.FrameBufferWidth = ClientRect.right - ClientRect.left;
+		GlobalState.FrameBufferHeight = ClientRect.bottom - ClientRect.top;
+		//GlobalState.FrameBufferWidth = 300;
+		//GlobalState.FrameBufferHeight = 300;
 		GlobalState.FrameBufferPixels = (u32*)malloc(sizeof(u32) * GlobalState.FrameBufferWidth
+			* GlobalState.FrameBufferHeight);
+		GlobalState.DepthBuffer = (f32*)malloc(sizeof(f32) * GlobalState.FrameBufferWidth
 			* GlobalState.FrameBufferHeight);
 	}
 
@@ -216,39 +226,51 @@ LRESULT Win32WindowCallBack(HWND WindowHandle,
 
 				u32 PixelColor = ((u32)Alpha << 24) | ((u32)Red << 16) | ((u32)Green << 8) | (u32)Blue;
 
+				GlobalState.DepthBuffer[PixelId] = FLT_MAX;
 				GlobalState.FrameBufferPixels[PixelId] = PixelColor;
 			}
 		}
 
-		v3 Colors[3]
+		v3 Colors1[3]
 		{
 			V3(1, 0, 0),
 			V3(0, 1, 0),
 			V3(0, 0, 1),
 		};
 
+		v3 Colors2[3]
+		{
+			V3(0, 1, 1),
+			V3(1, 1, 0),
+			V3(1, 1, 1),
+		};
+
 		v3 Points1[3]
 		{
-			V3(-1.0f, -1.0f, 1.0f),
-			V3(-1.0f, 1.0f, 1.0f),
-			V3(1.0f, 1.0f, 1.0f),
+			V3(0.0f, 0.5f, 1.0f),
+			V3(0.5f, -0.5f, 1.0f),
+			V3(-0.5f, -0.5f, 1.0f),
 		};
 
 		v3 Points2[3]
 		{
-			V3(1.0f, 1.0f, 1.0f),
-			V3(1.0f, -1.0f, 1.0f),
-			V3(-1.0f, -1.0f, 1.0f),
+			V3(0.0f, 0.5f, 1.2f),
+			V3(0.5f, -0.5f, 1.2f),
+			V3(-0.5f, -0.5f, 0.8f),
 		};
 
-		for (i32 TriangleId = 9; TriangleId >= 0; TriangleId--) {
+		/*DrawTriangle(Points1, Colors1);
+		DrawTriangle(Points2, Colors2);*/
+
+#if 1
+		for (i32 TriangleId = 0; TriangleId < 9; TriangleId++) {
 			f32 Depth = powf(2.0f, (f32)(TriangleId + 1));
 
 			v3 Points[3] =
 			{
-				V3(-12.0f, -0.5f, Depth),
-				V3(0.0f, 0.5f, Depth),
-				V3(1.0f, -0.5f, Depth),
+				V3(-1.0f, -0.5f, Depth),
+				V3(0.0f, 0.5f, Depth + 1.0f),
+				V3(1.0f, -0.5f, Depth - 0.5f),
 			};
 
 			for (u32 PixelId = 0; PixelId < ArrayCount(Points); PixelId++)
@@ -265,9 +287,9 @@ LRESULT Win32WindowCallBack(HWND WindowHandle,
 				Points[PixelId] = TransformedPos;
 			}
 
-			DrawTriangle(Points, Colors);
+			DrawTriangle(Points, Colors1);
 		}
-
+#endif
 		GlobalState.CurrAngle += FrameTime;
 		if (GlobalState.CurrAngle >= 2.0f * Pi32)
 		{

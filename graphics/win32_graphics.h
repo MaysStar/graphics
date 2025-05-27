@@ -73,6 +73,8 @@ struct global_state
 
     f32 CursorOffset;
     f32 CurrAngle;
+
+    f32* DepthBuffer;
     /*
     f32 CurrTime;
 
