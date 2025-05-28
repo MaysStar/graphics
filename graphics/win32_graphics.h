@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <float.h>
 #include <stdio.h>
+#include <cmath>
 
 typedef int8_t i8;
 typedef int16_t i16;
@@ -72,12 +73,10 @@ struct global_state
     u32* FrameBufferPixels;
 
     f32 CursorOffset;
-    f32 CurrAngle;
-
     f32* DepthBuffer;
-    /*
+    
     f32 CurrTime;
-
+    /*
     b32 WDown;
     b32 ADown;
     b32 SDown;
