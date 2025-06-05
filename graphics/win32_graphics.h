@@ -62,6 +62,15 @@ typedef int32_t b32;
 //    RasterizerType_Dx12,
 //};
 
+struct camera
+{
+    v2 PrevMousePos;
+    v3 Pos;
+    b32 PrevMouseDown;
+    f32 Yaw;
+    f32 Pitch;
+};
+
 struct global_state
 {
     b32 IsRunning;
@@ -74,8 +83,15 @@ struct global_state
 
     f32 CursorOffset;
     f32* DepthBuffer;
-    
+
     f32 CurrTime;
+
+    camera Camera;
+
+    b32 WDown;
+    b32 ADown;
+    b32 SDown;
+    b32 DDown;
     /*
     b32 WDown;
     b32 ADown;

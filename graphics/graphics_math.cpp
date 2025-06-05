@@ -74,12 +74,71 @@ v3 operator+(v3 A, v3 B)
 	return Result;
 }
 
+v3 operator-(v3 A, v3 B)
+{
+	v3 Result = {};
+	Result.x = A.x - B.x;
+	Result.y = A.y - B.y;
+	Result.z = A.z - B.z;
+	return Result;
+}
+
 v3 operator*(f32 A, v3 B)
 {
 	v3 Result = {};
 	Result.x = A * B.x;
 	Result.y = A * B.y;
 	Result.z = A * B.z;
+	return Result;
+}
+
+v3 operator*(v3 A, f32 B)
+{
+	v3 Result = {};
+	Result.x = A.x * B;
+	Result.y = A.y * B;
+	Result.z = A.z * B;
+	return Result;
+}
+
+v3 operator/(v3 A, f32 B)
+{
+	v3 Result = {};
+	Result.x = A.x / B;
+	Result.y = A.y / B;
+	Result.z = A.z / B;
+	return Result;
+}
+
+v3 operator+=(v3& A, v3 B)
+{
+	A.x += B.x;
+	A.y += B.y;
+	A.z += B.z;
+	return A;
+}
+
+v3 operator-=(v3& A, v3 B)
+{
+	A.x -= B.x;
+	A.y -= B.y;
+	A.z -= B.z;
+	return A;
+}
+
+v3 operator-(v3 A)
+{
+	v3 Result;
+	Result.x = -A.x;
+	Result.y = -A.y;
+	Result.z = -A.z;
+	return Result;
+}
+
+v3 Normalize(v3 A)
+{
+	f32 Length = sqrt(A.x * A.x + A.y * A.y + A.z * A.z);
+	v3 Result = A / Length;
 	return Result;
 }
 
@@ -175,6 +234,13 @@ m4 TranslationMatrix(f32 X, f32 Y, f32 Z)
 {
 	m4 Result = IdentityM4();
 	Result.v[3].xyz = V3(X, Y, Z);
+	return Result;
+}
+
+m4 TranslationMatrix(v3 Pos)
+{
+	m4 Result = IdentityM4();
+	Result.v[3].xyz = Pos;
 	return Result;
 }
 

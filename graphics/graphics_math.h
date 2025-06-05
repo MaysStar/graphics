@@ -78,7 +78,14 @@ v2 operator/(v2, f32);
 
 v3 V3(f32, f32, f32);
 v3 operator+(v3, v3);
+v3 operator-(v3, v3);
 v3 operator*(f32, v3);
+v3 operator*(v3, f32);
+v3 operator/(v3, f32);
+v3 Normalize(v3 A);
+v3 operator+=(v3&, v3);
+v3 operator-=(v3&, v3);
+v3 operator-(v3);
 
 v4 V4(f32, f32, f32, f32);
 v4 V4(v3, f32);
@@ -90,6 +97,7 @@ v4 operator*(m4, v4);
 m4 IdentityM4();
 m4 operator*(m4, m4);
 m4 ScaleMatrix(f32, f32, f32);
+m4 TranslationMatrix(v3);
 m4 TranslationMatrix(f32, f32, f32);
 m4 RotationMatrix(f32, f32, f32);
 
