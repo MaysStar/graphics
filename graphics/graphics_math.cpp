@@ -135,6 +135,13 @@ v3 operator-(v3 A)
 	return Result;
 }
 
+v3 operator/=(v3& A, f32 B)
+{
+	A = A / B;
+	return A;
+}
+
+
 v3 Normalize(v3 A)
 {
 	f32 Length = sqrt(A.x * A.x + A.y * A.y + A.z * A.z);
@@ -269,3 +276,21 @@ m4 RotationMatrix(f32 X, f32 Y, f32 Z)
 	Result = RotateZ * RotateY * RotateX;
 	return Result;
 }
+
+m4 PerspectiveMatrix(f32 FOV, f32 AspectRatio, f32 NearZ, f32 FarZ)
+{
+	// FOV must be in degree
+	m4 Result = {};
+
+	f32 RadianFOV = (FOV / 360.0f) * 2.0f * Pi;
+
+	Result.v[0].x = 1.0f / (AspectRatio * tan(RadianFOV * 0.5f));
+	Result.v[1].y = 1.0f / tan(RadianFOV * 0.5f);
+	Result.v[2].z = -FarZ / (NearZ - FarZ);
+	Result.v[3].z = (NearZ * FarZ) / (NearZ - FarZ);
+	Result.v[2].w = 1.0f;
+
+	return Result;
+}
+
+

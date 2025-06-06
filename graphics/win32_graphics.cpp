@@ -6,10 +6,12 @@
 global f32 Pi32 = 3.14159265359;
 global global_state GlobalState;
 
-v2 ProjectPoint(v3 Pos)
+v2 NdcToPixel(v2 NdcPos)
 {
-	v2 Result = Pos.xy / Pos.z;
-	Result = 0.5f * (Result + V2(1.0f)) * V2((f32)GlobalState.FrameBufferWidth, (f32)GlobalState.FrameBufferHeight);
+	v2 Result = {};
+	Result = 0.5f * (NdcPos + V2(1.0f, 1.0f));
+	Result = V2(GlobalState.FrameBufferWidth, GlobalState.FrameBufferHeight) * Result;
+
 	return Result;
 }
 
@@ -23,13 +25,17 @@ void  DrawTriangle( v3 ModelVertex0, v3 ModelVertex1, v3 ModelVertex2,
 					v3 ModelColor0, v3 ModelColor1, v3 ModelColor2,
 					m4 Transform)
 {
-	v3 TransformedPoint0 = (Transform * V4(ModelVertex0, 1.0f)).xyz;
-	v3 TransformedPoint1 = (Transform * V4(ModelVertex1, 1.0f)).xyz;
-	v3 TransformedPoint2 = (Transform * V4(ModelVertex2, 1.0f)).xyz;
+	v4 TransformedPoint0 = (Transform * V4(ModelVertex0, 1.0f));
+	v4 TransformedPoint1 = (Transform * V4(ModelVertex1, 1.0f));
+	v4 TransformedPoint2 = (Transform * V4(ModelVertex2, 1.0f));
 
-	v2 PointA = ProjectPoint(TransformedPoint0);
-	v2 PointB = ProjectPoint(TransformedPoint1);
-	v2 PointC = ProjectPoint(TransformedPoint2);
+	TransformedPoint0.xyz /= TransformedPoint0.w;
+	TransformedPoint1.xyz /= TransformedPoint1.w;
+	TransformedPoint2.xyz /= TransformedPoint2.w;
+
+	v2 PointA = NdcToPixel(TransformedPoint0.xy);
+	v2 PointB = NdcToPixel(TransformedPoint1.xy);
+	v2 PointC = NdcToPixel(TransformedPoint2.xy);
 
 	i32 MinX = min(min((i32)PointA.x, (i32)PointB.x), (i32)PointC.x);
 	i32 MaxX = max(max((i32)round(PointA.x), (i32)round(PointB.x)), (i32)round(PointC.x));
@@ -81,10 +87,9 @@ void  DrawTriangle( v3 ModelVertex0, v3 ModelVertex1, v3 ModelVertex2,
 				f32 T1 = -CrossLength2 / BaryCenrticDiv;
 				f32 T2 = -CrossLength0 / BaryCenrticDiv;
 
-				f32 Depth = T0 * (1.0f / TransformedPoint0.z) + T1 * (1.0f / TransformedPoint1.z) + T2 * (1.0f / TransformedPoint2.z);
-				Depth = 1.0f / Depth;
+				f32 DepthZ = T0 * TransformedPoint0.z + T1 * TransformedPoint1.z + T2 * TransformedPoint2.z;
 
-				if (Depth < GlobalState.DepthBuffer[PixelId])
+				if (DepthZ >= 0.0f && DepthZ <= 1.0f && DepthZ < GlobalState.DepthBuffer[PixelId])
 				{
 					v3 FinalColor = T0 * ModelColor0 + T1 * ModelColor1 + T2 * ModelColor2;
 
@@ -94,7 +99,7 @@ void  DrawTriangle( v3 ModelVertex0, v3 ModelVertex1, v3 ModelVertex2,
 
 					GlobalState.FrameBufferPixels[PixelId] = FinalColorU32;
 
-					GlobalState.DepthBuffer[PixelId] = Depth;
+					GlobalState.DepthBuffer[PixelId] = DepthZ;
 				}
 			}
 		}
@@ -326,9 +331,16 @@ LRESULT Win32WindowCallBack(HWND WindowHandle,
 			3, 7, 4,
 		};
 
+		RECT ClientRect = {};
+		Assert(GetClientRect(GlobalState.WindowHandle, &ClientRect));
+		u32 ClientWidth = ClientRect.right - ClientRect.left;
+		u32 ClientHeight = ClientRect.bottom - ClientRect.top;
+		f32 AspectRatio = (f32)(ClientWidth) / (f32)(ClientHeight);
+
 		m4 CameraTransform = IdentityM4();
 
 		{
+			
 			camera* Camera = &GlobalState.Camera;
 
 
@@ -342,13 +354,12 @@ LRESULT Win32WindowCallBack(HWND WindowHandle,
 				Assert(GetCursorPos(&Win32MousePos));
 				Assert(ScreenToClient(GlobalState.WindowHandle, &Win32MousePos));
 
-				RECT ClientRect = {};
-				Assert(GetClientRect(GlobalState.WindowHandle, &ClientRect));
+
 
 				Win32MousePos.y = ClientRect.bottom - Win32MousePos.y;
 
-				CurrMousePos.x = (f32)Win32MousePos.x / (f32)(ClientRect.right - ClientRect.left);
-				CurrMousePos.y = (f32)Win32MousePos.y / (f32)(ClientRect.bottom - ClientRect.top);
+				CurrMousePos.x = (f32)Win32MousePos.x / (f32)(ClientWidth);
+				CurrMousePos.y = (f32)Win32MousePos.y / (f32)(ClientHeight);
 
 				MouseDown = (GetKeyState(VK_LBUTTON) & 0x80) != 0;
 
@@ -418,7 +429,7 @@ LRESULT Win32WindowCallBack(HWND WindowHandle,
 		}
 
 		f32 Offset = abs(sin(GlobalState.CurrTime));
-		m4 Transform = CameraTransform * TranslationMatrix(0, 0, 4) * ScaleMatrix(1, 1, 1) * RotationMatrix(GlobalState.CurrTime, GlobalState.CurrTime, 0);
+		m4 Transform = (PerspectiveMatrix(90.0f, AspectRatio, 0.01f, 1000.0f) * CameraTransform * TranslationMatrix(0, 0, 4) * ScaleMatrix(1, 1, 1) * RotationMatrix(GlobalState.CurrTime, GlobalState.CurrTime, 0));
 
 		for (u32 IndexId = 0; IndexId < ArrayCount(ModelIndices); IndexId += 3)
 		{
@@ -468,11 +479,6 @@ LRESULT Win32WindowCallBack(HWND WindowHandle,
 		{
 			GlobalState.CurrTime -= 2.0f * Pi32;
 		}
-
-		RECT ClientRect = {};
-		Assert(GetClientRect(GlobalState.WindowHandle, &ClientRect));
-		u32 ClientWidth = ClientRect.right - ClientRect.left;
-		u32 ClientHeight = ClientRect.bottom - ClientRect.top;
 
 		BITMAPINFO BitmapInfo = {};
 		BitmapInfo.bmiHeader.biSize = sizeof(tagBITMAPINFOHEADER);

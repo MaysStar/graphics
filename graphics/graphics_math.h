@@ -3,6 +3,8 @@
 
 typedef float f32;
 
+static f32 Pi = 3.14159265359;
+
 union v2
 {
 	struct 
@@ -86,6 +88,7 @@ v3 Normalize(v3 A);
 v3 operator+=(v3&, v3);
 v3 operator-=(v3&, v3);
 v3 operator-(v3);
+v3 operator/=(v3&, f32);
 
 v4 V4(f32, f32, f32, f32);
 v4 V4(v3, f32);
@@ -100,6 +103,7 @@ m4 ScaleMatrix(f32, f32, f32);
 m4 TranslationMatrix(v3);
 m4 TranslationMatrix(f32, f32, f32);
 m4 RotationMatrix(f32, f32, f32);
+m4 PerspectiveMatrix(f32, f32, f32, f32);
 
 
 #define GRAPHICS_MATH_H
