@@ -62,26 +62,6 @@ typedef int32_t b32;
 //    RasterizerType_Dx12,
 //};
 
-struct texture
-{
-    u32 Width;
-    u32 Height;
-    u32* Texels;
-};
-
-enum sampler_type
-{
-    SamplerType_None,
-    SamplerType_Nearest,
-    SamplerType_Bilinear,
-};
-
-struct sampler
-{
-    sampler_type Type;
-    u32 BorderColor;
-};
-
 struct camera
 {
     v2 PrevMousePos;
