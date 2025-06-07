@@ -2,6 +2,7 @@
 #include <cmath>
 
 typedef float f32;
+typedef int i32;
 
 static f32 Pi = 3.14159265359;
 
@@ -13,6 +14,16 @@ union v2
 	};
 
 	f32 e[2];
+};
+
+union v2i
+{
+	struct
+	{
+		i32 x, y;
+	};
+
+	i32 e[2];
 };
 
 union v3 
@@ -77,6 +88,10 @@ v2 operator-(v2, v2);
 v2 operator*(v2, v2);
 v2 operator*(f32, v2);
 v2 operator/(v2, f32);
+v2 operator/=(v2&, f32);
+
+v2i V2I(f32, f32);
+v2i operator+(v2i, v2i);
 
 v3 V3(f32, f32, f32);
 v3 operator+(v3, v3);
@@ -89,6 +104,7 @@ v3 operator+=(v3&, v3);
 v3 operator-=(v3&, v3);
 v3 operator-(v3);
 v3 operator/=(v3&, f32);
+v3 Lerp(v3, v3, f32);
 
 v4 V4(f32, f32, f32, f32);
 v4 V4(v3, f32);

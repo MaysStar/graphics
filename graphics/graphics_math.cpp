@@ -56,6 +56,29 @@ v2 operator/(v2 A, f32 B)
 	return Result;
 }
 
+v2 operator/=(v2& A, f32 B)
+{
+	A = A / B;
+	return A;
+}
+
+v2i V2I(f32 A, f32 B)
+{
+	v2i Result = {};
+	Result.x = (int)(A);
+	Result.y = (int)(B);
+	return Result;
+}
+
+v2i operator+(v2i A, v2i B)
+{
+	v2i Result = {};
+	Result.x = A.x + B.x;
+	Result.y = A.y + B.y;
+	return Result;
+}
+
+
 v3 V3(f32 X, f32 Y, f32 Z)
 {
 	v3 Result = {};
@@ -146,6 +169,13 @@ v3 Normalize(v3 A)
 {
 	f32 Length = sqrt(A.x * A.x + A.y * A.y + A.z * A.z);
 	v3 Result = A / Length;
+	return Result;
+}
+
+v3 Lerp(v3 A, v3 B, f32 T)
+{
+	v3 Result = {};
+	Result = (1.0 - T) * A + T * B;
 	return Result;
 }
 
