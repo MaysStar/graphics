@@ -56,6 +56,29 @@ v2 operator/(v2 A, f32 B)
 	return Result;
 }
 
+v2 operator/=(v2& A, f32 B)
+{
+	A = A / B;
+	return A;
+}
+
+v2i V2I(f32 A, f32 B)
+{
+	v2i Result = {};
+	Result.x = (int)(A);
+	Result.y = (int)(B);
+	return Result;
+}
+
+v2i operator+(v2i A, v2i B)
+{
+	v2i Result = {};
+	Result.x = A.x + B.x;
+	Result.y = A.y + B.y;
+	return Result;
+}
+
+
 v3 V3(f32 X, f32 Y, f32 Z)
 {
 	v3 Result = {};
@@ -135,10 +158,24 @@ v3 operator-(v3 A)
 	return Result;
 }
 
+v3 operator/=(v3& A, f32 B)
+{
+	A = A / B;
+	return A;
+}
+
+
 v3 Normalize(v3 A)
 {
 	f32 Length = sqrt(A.x * A.x + A.y * A.y + A.z * A.z);
 	v3 Result = A / Length;
+	return Result;
+}
+
+v3 Lerp(v3 A, v3 B, f32 T)
+{
+	v3 Result = {};
+	Result = (1.0 - T) * A + T * B;
 	return Result;
 }
 
@@ -269,3 +306,21 @@ m4 RotationMatrix(f32 X, f32 Y, f32 Z)
 	Result = RotateZ * RotateY * RotateX;
 	return Result;
 }
+
+m4 PerspectiveMatrix(f32 FOV, f32 AspectRatio, f32 NearZ, f32 FarZ)
+{
+	// FOV must be in degree
+	m4 Result = {};
+
+	f32 RadianFOV = (FOV / 360.0f) * 2.0f * Pi;
+
+	Result.v[0].x = 1.0f / (AspectRatio * tan(RadianFOV * 0.5f));
+	Result.v[1].y = 1.0f / tan(RadianFOV * 0.5f);
+	Result.v[2].z = -FarZ / (NearZ - FarZ);
+	Result.v[3].z = (NearZ * FarZ) / (NearZ - FarZ);
+	Result.v[2].w = 1.0f;
+
+	return Result;
+}
+
+
