@@ -1,7 +1,7 @@
 #if !defined(WIN32_GRAPHICS_H)
 
 #include "base_def.h"
-#include "graphics_math.h"
+#include "clipper.h"
 
 struct texture
 {

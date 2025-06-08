@@ -107,6 +107,7 @@ v4 V4(v3, f32);
 v4 operator+(v4, v4);
 v4 operator*(v4, v4);
 v4 operator*(v4, f32);
+v4 operator*(f32, v4);
 v4 operator*(m4, v4);
 
 m4 IdentityM4();
