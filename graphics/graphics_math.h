@@ -1,10 +1,6 @@
 #if !defined(GRAPHICS_MATH_H)
-#include <cmath>
 
-typedef float f32;
-typedef int i32;
-
-static f32 Pi = 3.14159265359;
+#include "base_def.h"
 
 union v2
 {
@@ -120,7 +116,6 @@ m4 TranslationMatrix(v3);
 m4 TranslationMatrix(f32, f32, f32);
 m4 RotationMatrix(f32, f32, f32);
 m4 PerspectiveMatrix(f32, f32, f32, f32);
-
 
 #define GRAPHICS_MATH_H
 #endif

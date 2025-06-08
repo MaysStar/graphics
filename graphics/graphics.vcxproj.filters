@@ -21,12 +21,21 @@
     <ClCompile Include="graphics_math.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="clipper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="win32_graphics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="graphics_math.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="clipper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="base_def.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

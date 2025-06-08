@@ -19,10 +19,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="clipper.cpp" />
     <ClCompile Include="graphics_math.cpp" />
     <ClCompile Include="win32_graphics.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="base_def.h" />
+    <ClInclude Include="clipper.h" />
     <ClInclude Include="graphics_math.h" />
     <ClInclude Include="win32_graphics.h" />
   </ItemGroup>

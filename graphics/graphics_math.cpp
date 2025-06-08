@@ -312,7 +312,7 @@ m4 PerspectiveMatrix(f32 FOV, f32 AspectRatio, f32 NearZ, f32 FarZ)
 	// FOV must be in degree
 	m4 Result = {};
 
-	f32 RadianFOV = (FOV / 360.0f) * 2.0f * Pi;
+	f32 RadianFOV = (FOV / 360.0f) * 2.0f * Pi32;
 
 	Result.v[0].x = 1.0f / (AspectRatio * tan(RadianFOV * 0.5f));
 	Result.v[1].y = 1.0f / tan(RadianFOV * 0.5f);

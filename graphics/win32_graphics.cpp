@@ -1,9 +1,5 @@
-
-#include <Windows.h>
-
 #include "win32_graphics.h"
 
-global f32 Pi32 = 3.14159265359;
 global global_state GlobalState;
 
 v2 NdcToPixel(v2 NdcPos)
