@@ -62,6 +62,12 @@ v2 operator/=(v2& A, f32 B)
 	return A;
 }
 
+v2 operator*=(v2& A, f32 B)
+{
+	A = B * A;
+	return A;
+}
+
 v2i V2I(f32 A, f32 B)
 {
 	v2i Result = {};
@@ -164,6 +170,11 @@ v3 operator/=(v3& A, f32 B)
 	return A;
 }
 
+v3 operator*=(v3& A, f32 B)
+{
+	A = A * B;
+	return A;
+}
 
 v3 Normalize(v3 A)
 {
