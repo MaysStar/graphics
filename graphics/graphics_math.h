@@ -85,6 +85,7 @@ v2 operator*(v2, v2);
 v2 operator*(f32, v2);
 v2 operator/(v2, f32);
 v2 operator/=(v2&, f32);
+v2 operator*=(v2&, f32);
 
 v2i V2I(f32, f32);
 v2i operator+(v2i, v2i);
@@ -100,6 +101,7 @@ v3 operator+=(v3&, v3);
 v3 operator-=(v3&, v3);
 v3 operator-(v3);
 v3 operator/=(v3&, f32);
+v3 operator*=(v3&, f32);
 v3 Lerp(v3, v3, f32);
 
 v4 V4(f32, f32, f32, f32);
