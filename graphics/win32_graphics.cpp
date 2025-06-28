@@ -69,9 +69,9 @@ void DrawTriangle(clip_vertex Vertex0, clip_vertex Vertex1, clip_vertex Vertex2,
     v2 Edge1 = PointC - PointB;
     v2 Edge2 = PointA - PointC;
 
-    b32 IsTopLeft0 = (Edge0.x >= 0.0f && Edge0.y > 0.0f) || (Edge0.x > 0.0f && Edge0.y == 0.0f);
-    b32 IsTopLeft1 = (Edge1.x >= 0.0f && Edge1.y > 0.0f) || (Edge1.x > 0.0f && Edge1.y == 0.0f);
-    b32 IsTopLeft2 = (Edge2.x >= 0.0f && Edge2.y > 0.0f) || (Edge2.x > 0.0f && Edge2.y == 0.0f);
+    b32 IsTopLeft0 = (Edge0.y > 0.0f) || (Edge0.x > 0.0f && Edge0.y == 0.0f);
+    b32 IsTopLeft1 = (Edge1.y > 0.0f) || (Edge1.x > 0.0f && Edge1.y == 0.0f);
+    b32 IsTopLeft2 = (Edge2.y > 0.0f) || (Edge2.x > 0.0f && Edge2.y == 0.0f);
 
     f32 BaryCentricDiv = CrossProduct2d(PointB - PointA, PointC - PointA);
 
@@ -87,9 +87,10 @@ void DrawTriangle(clip_vertex Vertex0, clip_vertex Vertex1, clip_vertex Vertex2,
     f32 Edge1DiffY = -Edge1.x;
     f32 Edge2DiffY = -Edge2.x;
 
-    f32 Edge0RowY = CrossProduct2d(V2(MinX, MinY) - PointA, Edge0);
-    f32 Edge1RowY = CrossProduct2d(V2(MinX, MinY) - PointB, Edge1);
-    f32 Edge2RowY = CrossProduct2d(V2(MinX, MinY) - PointC, Edge2);
+    v2 StartPos = V2(MinX, MinY) + V2(0.5);
+    f32 Edge0RowY = CrossProduct2d(StartPos - PointA, Edge0);
+    f32 Edge1RowY = CrossProduct2d(StartPos - PointB, Edge1);
+    f32 Edge2RowY = CrossProduct2d(StartPos - PointC, Edge2);
 
     for (i32 Y = MinY; Y <= MaxY; ++Y)
     {
@@ -294,8 +295,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
         GlobalState.FrameBufferWidth = ClientRect.right - ClientRect.left;
         GlobalState.FrameBufferHeight = ClientRect.bottom - ClientRect.top;
 
-        GlobalState.FrameBufferWidth = 1200;
-        GlobalState.FrameBufferHeight = 1200;
+        GlobalState.FrameBufferWidth = 300;
+        GlobalState.FrameBufferHeight = 300;
         GlobalState.FrameBufferPixels = (u32*)malloc(sizeof(u32) * GlobalState.FrameBufferWidth *
             GlobalState.FrameBufferHeight);
         GlobalState.DepthBuffer = (f32*)malloc(sizeof(f32) * GlobalState.FrameBufferWidth *
