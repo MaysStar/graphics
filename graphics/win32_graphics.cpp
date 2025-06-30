@@ -17,6 +17,12 @@ f32 CrossProduct2d(v2 A, v2 B)
 	return Result;
 }
 
+i64 CrossProduct2d(v2i A, v2i B)
+{
+    i64 Result = i64(A.x) * i64(B.y) - i64(A.y) * i64(B.x);
+    return Result;
+}
+
 v3 ColorU32ToRgb(u32 Color)
 {
 	v3 Result = {};
@@ -37,6 +43,7 @@ u32 ColorRgbToU32(v3 Color)
 void DrawTriangle(clip_vertex Vertex0, clip_vertex Vertex1, clip_vertex Vertex2,
     texture Texture, sampler Sampler)
 {
+#if 0
     Vertex0.Pos.w = 1.0f / Vertex0.Pos.w;
     Vertex1.Pos.w = 1.0f / Vertex1.Pos.w;
     Vertex2.Pos.w = 1.0f / Vertex2.Pos.w;
@@ -54,7 +61,7 @@ void DrawTriangle(clip_vertex Vertex0, clip_vertex Vertex1, clip_vertex Vertex2,
     i32 MinY = min(min((i32)PointA.y, (i32)PointB.y), (i32)PointC.y);
     i32 MaxY = max(max((i32)round(PointA.y), (i32)round(PointB.y)), (i32)round(PointC.y));
 
-#if 1
+#if 0
     MinX = max(0, MinX);
     MinX = min(GlobalState.FrameBufferWidth - 1, MinX);
     MaxX = max(0, MaxX);
@@ -69,9 +76,9 @@ void DrawTriangle(clip_vertex Vertex0, clip_vertex Vertex1, clip_vertex Vertex2,
     v2 Edge1 = PointC - PointB;
     v2 Edge2 = PointA - PointC;
 
-    b32 IsTopLeft0 = (Edge0.x >= 0.0f && Edge0.y > 0.0f) || (Edge0.x > 0.0f && Edge0.y == 0.0f);
-    b32 IsTopLeft1 = (Edge1.x >= 0.0f && Edge1.y > 0.0f) || (Edge1.x > 0.0f && Edge1.y == 0.0f);
-    b32 IsTopLeft2 = (Edge2.x >= 0.0f && Edge2.y > 0.0f) || (Edge2.x > 0.0f && Edge2.y == 0.0f);
+    b32 IsTopLeft0 = (Edge0.y > 0.0f) || (Edge0.x > 0.0f && Edge0.y == 0.0f);
+    b32 IsTopLeft1 = (Edge1.y > 0.0f) || (Edge1.x > 0.0f && Edge1.y == 0.0f);
+    b32 IsTopLeft2 = (Edge2.y > 0.0f) || (Edge2.x > 0.0f && Edge2.y == 0.0f);
 
     f32 BaryCentricDiv = CrossProduct2d(PointB - PointA, PointC - PointA);
 
@@ -87,9 +94,10 @@ void DrawTriangle(clip_vertex Vertex0, clip_vertex Vertex1, clip_vertex Vertex2,
     f32 Edge1DiffY = -Edge1.x;
     f32 Edge2DiffY = -Edge2.x;
 
-    f32 Edge0RowY = CrossProduct2d(V2(MinX, MinY) - PointA, Edge0);
-    f32 Edge1RowY = CrossProduct2d(V2(MinX, MinY) - PointB, Edge1);
-    f32 Edge2RowY = CrossProduct2d(V2(MinX, MinY) - PointC, Edge2);
+    v2 StartPos = V2(MinX, MinY) + V2(0.5);
+    f32 Edge0RowY = CrossProduct2d(StartPos - PointA, Edge0);
+    f32 Edge1RowY = CrossProduct2d(StartPos - PointB, Edge1);
+    f32 Edge2RowY = CrossProduct2d(StartPos - PointC, Edge2);
 
     for (i32 Y = MinY; Y <= MaxY; ++Y)
     {
@@ -192,6 +200,176 @@ void DrawTriangle(clip_vertex Vertex0, clip_vertex Vertex1, clip_vertex Vertex2,
         Edge2RowY += Edge2DiffY;
         
     }
+#else
+
+    Vertex0.Pos.w = 1.0f / Vertex0.Pos.w;
+    Vertex1.Pos.w = 1.0f / Vertex1.Pos.w;
+    Vertex2.Pos.w = 1.0f / Vertex2.Pos.w;
+
+    Vertex0.Pos.xyz *= Vertex0.Pos.w;
+    Vertex1.Pos.xyz *= Vertex1.Pos.w;
+    Vertex2.Pos.xyz *= Vertex2.Pos.w;
+
+    Vertex0.Uv *= Vertex0.Pos.w;
+    Vertex1.Uv *= Vertex1.Pos.w;
+    Vertex2.Uv *= Vertex2.Pos.w;
+
+    v2 PointAF = NdcToPixels(Vertex0.Pos.xy);
+    v2 PointBF = NdcToPixels(Vertex1.Pos.xy);
+    v2 PointCF = NdcToPixels(Vertex2.Pos.xy);
+
+    i32 MinX = min(min((i32)PointAF.x, (i32)PointBF.x), (i32)PointCF.x);
+    i32 MaxX = max(max((i32)round(PointAF.x), (i32)round(PointBF.x)), (i32)round(PointCF.x));
+    i32 MinY = min(min((i32)PointAF.y, (i32)PointBF.y), (i32)PointCF.y);
+    i32 MaxY = max(max((i32)round(PointAF.y), (i32)round(PointBF.y)), (i32)round(PointCF.y));
+
+#if 0
+    MinX = max(0, MinX);
+    MinX = min(GlobalState.FrameBufferWidth - 1, MinX);
+    MaxX = max(0, MaxX);
+    MaxX = min(GlobalState.FrameBufferWidth - 1, MaxX);
+    MinY = max(0, MinY);
+    MinY = min(GlobalState.FrameBufferHeight - 1, MinY);
+    MaxY = max(0, MaxY);
+    MaxY = min(GlobalState.FrameBufferHeight - 1, MaxY);
+#endif
+
+    v2i PointA = V2I_F24_8(PointAF);
+    v2i PointB = V2I_F24_8(PointBF);
+    v2i PointC = V2I_F24_8(PointCF);
+
+    v2i Edge0 = PointB - PointA;
+    v2i Edge1 = PointC - PointB;
+    v2i Edge2 = PointA - PointC;
+
+    b32 IsTopLeft0 = (Edge0.y > 0.) || (Edge0.x > 0 && Edge0.y == 0);
+    b32 IsTopLeft1 = (Edge1.y > 0) || (Edge1.x > 0 && Edge1.y == 0);
+    b32 IsTopLeft2 = (Edge2.y > 0) || (Edge2.x > 0 && Edge2.y == 0);
+
+    f32 BaryCentricDiv = f32(CrossProduct2d(PointB - PointA, PointC - PointA)) / 256.0f;
+    BaryCentricDiv = 1.0f / BaryCentricDiv;
+
+    i32 Edge0DiffX = Edge0.y;
+    i32 Edge1DiffX = Edge1.y;
+    i32 Edge2DiffX = Edge2.y;
+
+    i32 Edge0DiffY = -Edge0.x;
+    i32 Edge1DiffY = -Edge1.x;
+    i32 Edge2DiffY = -Edge2.x;
+
+    v2i StartPos = V2I_F24_8(V2(MinX, MinY) + V2(0.5f, 0.5f));
+    i64 Edge0RowY64 = CrossProduct2d(StartPos - PointA, Edge0);
+    i64 Edge1RowY64 = CrossProduct2d(StartPos - PointB, Edge1);
+    i64 Edge2RowY64 = CrossProduct2d(StartPos - PointC, Edge2);
+
+    i32 Edge0RowY = i32((Edge0RowY64 + Sign(Edge0RowY64) * 128) / 256) - (IsTopLeft0 ? 0 : -1);
+    i32 Edge1RowY = i32((Edge1RowY64 + Sign(Edge1RowY64) * 128) / 256) - (IsTopLeft1 ? 0 : -1);
+    i32 Edge2RowY = i32((Edge2RowY64 + Sign(Edge2RowY64) * 128) / 256) - (IsTopLeft2 ? 0 : -1);
+
+    for (i32 Y = MinY; Y <= MaxY; ++Y)
+    {
+        i32 Edge0RowX = Edge0RowY;
+        i32 Edge1RowX = Edge1RowY;
+        i32 Edge2RowX = Edge2RowY;
+
+        for (i32 X = MinX; X <= MaxX; ++X)
+        {
+            /*if ((Edge0RowX > 0 || (IsTopLeft0 && Edge0RowX == 0)) &&
+                (Edge1RowX > 0 || (IsTopLeft1 && Edge1RowX == 0)) &&
+                (Edge2RowX > 0 || (IsTopLeft2 && Edge2RowX == 0)))
+            {*/
+            if(Edge0RowX >= 0 && Edge1RowX >= 0 && Edge2RowX >= 0)
+            {
+                // NOTE: Ми у середині трикутника
+                u32 PixelId = Y * GlobalState.FrameBufferWidth + X;
+
+                f32 T0 = -f32(Edge1RowX) * BaryCentricDiv;
+                f32 T1 = -f32(Edge2RowX) * BaryCentricDiv;
+                f32 T2 = -f32(Edge0RowX) * BaryCentricDiv;
+
+                f32 DepthZ = T0 * Vertex0.Pos.z + T1 * Vertex1.Pos.z + T2 * Vertex2.Pos.z;
+                if (DepthZ >= 0.0f && DepthZ <= 1.0f && DepthZ < GlobalState.DepthBuffer[PixelId])
+                {
+                    f32 OneOverW = T0 * Vertex0.Pos.w + T1 * Vertex1.Pos.w + T2 * Vertex2.Pos.w;
+
+                    v2 Uv = T0 * Vertex0.Uv + T1 * Vertex1.Uv + T2 * Vertex2.Uv;
+                    Uv /= OneOverW;
+
+                    u32 TexelColor = 0;
+                    switch (Sampler.Type)
+                    {
+                    case SamplerType_Nearest:
+                    {
+                        i32 TexelX = (i32)floorf(Uv.x * (Texture.Width - 1));
+                        i32 TexelY = (i32)floorf(Uv.y * (Texture.Height - 1));
+                        if (TexelX >= 0 && TexelX < Texture.Width &&
+                            TexelY >= 0 && TexelY < Texture.Height)
+                        {
+                            TexelColor = Texture.Texels[TexelY * Texture.Width + TexelX];
+                        }
+                        else
+                        {
+                            TexelColor = 0xFF00FF00;
+                        }
+                    } break;
+
+                    case SamplerType_Bilinear:
+                    {
+                        v2 TexelV2 = Uv * V2(Texture.Width, Texture.Height) - V2(0.5f, 0.5f);
+                        v2i TexelPos[4] = {};
+                        TexelPos[0] = V2I(floorf(TexelV2.x), floorf(TexelV2.y));
+                        TexelPos[1] = TexelPos[0] + V2I(1, 0);
+                        TexelPos[2] = TexelPos[0] + V2I(0, 1);
+                        TexelPos[3] = TexelPos[0] + V2I(1, 1);
+
+                        v3 TexelColors[4] = {};
+                        for (u32 TexelId = 0; TexelId < ArrayCount(TexelPos); ++TexelId)
+                        {
+                            v2i CurrTexelPos = TexelPos[TexelId];
+                            if (CurrTexelPos.x >= 0 && CurrTexelPos.x < Texture.Width &&
+                                CurrTexelPos.y >= 0 && CurrTexelPos.y < Texture.Height)
+                            {
+                                TexelColors[TexelId] = ColorU32ToRgb(Texture.Texels[CurrTexelPos.y * Texture.Width + CurrTexelPos.x]);
+                            }
+                            else
+                            {
+                                TexelColors[TexelId] = ColorU32ToRgb(Sampler.BorderColor);
+                            }
+                        }
+
+                        f32 S = TexelV2.x - floorf(TexelV2.x);
+                        f32 K = TexelV2.y - floorf(TexelV2.y);
+
+                        v3 Interpolated0 = Lerp(TexelColors[0], TexelColors[1], S);
+                        v3 Interpolated1 = Lerp(TexelColors[2], TexelColors[3], S);
+                        v3 FinalColor = Lerp(Interpolated0, Interpolated1, K);
+
+                        TexelColor = ColorRgbToU32(FinalColor);
+                    } break;
+
+                    default:
+                    {
+                        InvalidCodePath;
+                    }
+                    }
+
+                    GlobalState.FrameBufferPixels[PixelId] = TexelColor;
+                    GlobalState.DepthBuffer[PixelId] = DepthZ;
+                }
+
+            }
+
+            Edge0RowX += Edge0DiffX;
+            Edge1RowX += Edge1DiffX;
+            Edge2RowX += Edge2DiffX;
+        }
+
+        Edge0RowY += Edge0DiffY;
+        Edge1RowY += Edge1DiffY;
+        Edge2RowY += Edge2DiffY;
+
+    }
+#endif
 }
 
 void DrawTriangle(v4 ModelVertex0, v4 ModelVertex1, v4 ModelVertex2,
@@ -269,7 +447,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
         GlobalState.WindowHandle = CreateWindowExA(
             0,
             WindowClass.lpszClassName,
-            "Graphics Tutorial",
+            "Graphics",
             WS_OVERLAPPEDWINDOW | WS_VISIBLE,
             CW_USEDEFAULT,
             CW_USEDEFAULT,
@@ -294,8 +472,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
         GlobalState.FrameBufferWidth = ClientRect.right - ClientRect.left;
         GlobalState.FrameBufferHeight = ClientRect.bottom - ClientRect.top;
 
-        GlobalState.FrameBufferWidth = 1200;
-        GlobalState.FrameBufferHeight = 1200;
+        GlobalState.FrameBufferWidth = 600;
+        GlobalState.FrameBufferHeight = 600;
         GlobalState.FrameBufferPixels = (u32*)malloc(sizeof(u32) * GlobalState.FrameBufferWidth *
             GlobalState.FrameBufferHeight);
         GlobalState.DepthBuffer = (f32*)malloc(sizeof(f32) * GlobalState.FrameBufferWidth *
@@ -506,7 +684,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
             GlobalState.CurrTime -= 2.0f * 3.14159f;
         }
 
-        GlobalState.CurrTime = 0;
+        //GlobalState.CurrTime = 0;
 
         v3 ModelVertices[] =
         {
@@ -567,7 +745,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
         m4 Transform = (PerspectiveMatrix(60.0f, AspectRatio, 0.01f, 1000.0f) *
             CameraTransform *
             TranslationMatrix(0, 0, 2) *
-            RotationMatrix(GlobalState.CurrTime, GlobalState.CurrTime, GlobalState.CurrTime) *
+            RotationMatrix(0, 0, 0) *
             ScaleMatrix(1, 1, 1));
 
         v4* TransformedVertices = (v4*)malloc(sizeof(v4) * ArrayCount(ModelVertices));

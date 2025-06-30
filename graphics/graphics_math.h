@@ -88,7 +88,11 @@ v2 operator/=(v2&, f32);
 v2 operator*=(v2&, f32);
 
 v2i V2I(f32, f32);
+v2i V2I_F24_8(v2);
 v2i operator+(v2i, v2i);
+v2i operator-(v2i, v2i);
+
+i64 Sign(i64);
 
 v3 V3(f32, f32, f32);
 v3 operator+(v3, v3);
