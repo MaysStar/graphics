@@ -6,6 +6,12 @@
 #include <float.h>
 #include <stdio.h>
 #include <cmath>
+#include <xmmintrin.h>
+#include <emmintrin.h>
+#include <pmmintrin.h>
+#include <tmmintrin.h>
+#include <smmintrin.h>
+#include < nmmintrin.h>
 
 typedef int8_t i8;
 typedef int16_t i16;
