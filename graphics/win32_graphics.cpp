@@ -7,13 +7,6 @@ v2 NdcToPixels(v2 NdcPos)
 	v2 Result = {};
 	Result = 0.5f * (NdcPos + V2(1.0f, 1.0f));
 	Result = V2(GlobalState.FrameBufferWidth, GlobalState.FrameBufferHeight) * Result;
-
-	return Result;
-}
-
-f32 CrossProduct2d(v2 A, v2 B)
-{
-	f32 Result = A.x * B.y - A.y * B.x;
 	return Result;
 }
 
@@ -23,184 +16,27 @@ i64 CrossProduct2d(v2i A, v2i B)
     return Result;
 }
 
-v3 ColorU32ToRgb(u32 Color)
+v3_x4 ColorI32ToRgb(i32_x4 Color)
 {
-	v3 Result = {};
-	Result.r = (Color >> 16) & 0xFF;
-	Result.g = (Color >> 8) & 0xFF;
-	Result.b = (Color >> 0) & 0xFF;
-	Result /= 255.0f;
+	v3_x4 Result = {};
+	Result.r = F32X4((Color >> 16) & 0xFF);
+	Result.g = F32X4((Color >> 8) & 0xFF);
+	Result.b = F32X4((Color >> 0) & 0xFF);
+	Result = Result / 255.0f;
 	return Result;
 }
 
-u32 ColorRgbToU32(v3 Color)
+i32_x4 ColorRgbToI32(v3_x4 Color)
 {
 	Color = Color * 255.0f;
-	u32 Result = ((u32)0xFF << 24) | ((u32)Color.r << 16) | ((u32)Color.g << 8) | (u32)Color.b;
+	i32_x4 Result = (I32X4(0xFF) << 24) | (I32X4(Color.r) << 16) | (I32X4(Color.g) << 8) | I32X4(Color.b);
 	return Result;
 }
+
 
 void DrawTriangle(clip_vertex Vertex0, clip_vertex Vertex1, clip_vertex Vertex2,
     texture Texture, sampler Sampler)
 {
-#if 0
-    Vertex0.Pos.w = 1.0f / Vertex0.Pos.w;
-    Vertex1.Pos.w = 1.0f / Vertex1.Pos.w;
-    Vertex2.Pos.w = 1.0f / Vertex2.Pos.w;
-
-    Vertex0.Pos.xyz *= Vertex0.Pos.w;
-    Vertex1.Pos.xyz *= Vertex1.Pos.w;
-    Vertex2.Pos.xyz *= Vertex2.Pos.w;
-
-    v2 PointA = NdcToPixels(Vertex0.Pos.xy);
-    v2 PointB = NdcToPixels(Vertex1.Pos.xy);
-    v2 PointC = NdcToPixels(Vertex2.Pos.xy);
-
-    i32 MinX = min(min((i32)PointA.x, (i32)PointB.x), (i32)PointC.x);
-    i32 MaxX = max(max((i32)round(PointA.x), (i32)round(PointB.x)), (i32)round(PointC.x));
-    i32 MinY = min(min((i32)PointA.y, (i32)PointB.y), (i32)PointC.y);
-    i32 MaxY = max(max((i32)round(PointA.y), (i32)round(PointB.y)), (i32)round(PointC.y));
-
-#if 0
-    MinX = max(0, MinX);
-    MinX = min(GlobalState.FrameBufferWidth - 1, MinX);
-    MaxX = max(0, MaxX);
-    MaxX = min(GlobalState.FrameBufferWidth - 1, MaxX);
-    MinY = max(0, MinY);
-    MinY = min(GlobalState.FrameBufferHeight - 1, MinY);
-    MaxY = max(0, MaxY);
-    MaxY = min(GlobalState.FrameBufferHeight - 1, MaxY);
-#endif
-
-    v2 Edge0 = PointB - PointA;
-    v2 Edge1 = PointC - PointB;
-    v2 Edge2 = PointA - PointC;
-
-    b32 IsTopLeft0 = (Edge0.y > 0.0f) || (Edge0.x > 0.0f && Edge0.y == 0.0f);
-    b32 IsTopLeft1 = (Edge1.y > 0.0f) || (Edge1.x > 0.0f && Edge1.y == 0.0f);
-    b32 IsTopLeft2 = (Edge2.y > 0.0f) || (Edge2.x > 0.0f && Edge2.y == 0.0f);
-
-    f32 BaryCentricDiv = CrossProduct2d(PointB - PointA, PointC - PointA);
-
-    Vertex0.Uv *= Vertex0.Pos.w;
-    Vertex1.Uv *= Vertex1.Pos.w;
-    Vertex2.Uv *= Vertex2.Pos.w;
-
-    f32 Edge0DiffX = Edge0.y;
-    f32 Edge1DiffX = Edge1.y;
-    f32 Edge2DiffX = Edge2.y;
-
-    f32 Edge0DiffY = -Edge0.x;
-    f32 Edge1DiffY = -Edge1.x;
-    f32 Edge2DiffY = -Edge2.x;
-
-    v2 StartPos = V2(MinX, MinY) + V2(0.5);
-    f32 Edge0RowY = CrossProduct2d(StartPos - PointA, Edge0);
-    f32 Edge1RowY = CrossProduct2d(StartPos - PointB, Edge1);
-    f32 Edge2RowY = CrossProduct2d(StartPos - PointC, Edge2);
-
-    for (i32 Y = MinY; Y <= MaxY; ++Y)
-    {
-        f32 Edge0 = Edge0RowY;
-        f32 Edge1 = Edge1RowY;
-        f32 Edge2 = Edge2RowY;
-
-        for (i32 X = MinX; X <= MaxX; ++X)
-        {
-            if ((Edge0 > 0.0f || (IsTopLeft0 && Edge0 == 0.0f)) &&
-                (Edge1 > 0.0f || (IsTopLeft1 && Edge1 == 0.0f)) &&
-                (Edge2 > 0.0f || (IsTopLeft2 && Edge2 == 0.0f)))
-            {
-                // NOTE: Ми у середині трикутника
-                u32 PixelId = Y * GlobalState.FrameBufferWidth + X;
-
-                f32 T0 = -Edge1 / BaryCentricDiv;
-                f32 T1 = -Edge2 / BaryCentricDiv;
-                f32 T2 = -Edge0 / BaryCentricDiv;
-
-                f32 DepthZ = T0 * Vertex0.Pos.z + T1 * Vertex1.Pos.z + T2 * Vertex2.Pos.z;
-                if (DepthZ >= 0.0f && DepthZ <= 1.0f && DepthZ < GlobalState.DepthBuffer[PixelId])
-                {
-                    f32 OneOverW = T0 * Vertex0.Pos.w + T1 * Vertex1.Pos.w + T2 * Vertex2.Pos.w;
-
-                    v2 Uv = T0 * Vertex0.Uv + T1 * Vertex1.Uv + T2 * Vertex2.Uv;
-                    Uv /= OneOverW;
-
-                    u32 TexelColor = 0;
-                    switch (Sampler.Type)
-                    {
-                    case SamplerType_Nearest:
-                    {
-                        i32 TexelX = (i32)floorf(Uv.x * (Texture.Width - 1));
-                        i32 TexelY = (i32)floorf(Uv.y * (Texture.Height - 1));
-                        if (TexelX >= 0 && TexelX < Texture.Width &&
-                            TexelY >= 0 && TexelY < Texture.Height)
-                        {
-                            TexelColor = Texture.Texels[TexelY * Texture.Width + TexelX];
-                        }
-                        else
-                        {
-                            TexelColor = 0xFF00FF00;
-                        }
-                    } break;
-
-                    case SamplerType_Bilinear:
-                    {
-                        v2 TexelV2 = Uv * V2(Texture.Width, Texture.Height) - V2(0.5f, 0.5f);
-                        v2i TexelPos[4] = {};
-                        TexelPos[0] = V2I(floorf(TexelV2.x), floorf(TexelV2.y));
-                        TexelPos[1] = TexelPos[0] + V2I(1, 0);
-                        TexelPos[2] = TexelPos[0] + V2I(0, 1);
-                        TexelPos[3] = TexelPos[0] + V2I(1, 1);
-
-                        v3 TexelColors[4] = {};
-                        for (u32 TexelId = 0; TexelId < ArrayCount(TexelPos); ++TexelId)
-                        {
-                            v2i CurrTexelPos = TexelPos[TexelId];
-                            if (CurrTexelPos.x >= 0 && CurrTexelPos.x < Texture.Width &&
-                                CurrTexelPos.y >= 0 && CurrTexelPos.y < Texture.Height)
-                            {
-                                TexelColors[TexelId] = ColorU32ToRgb(Texture.Texels[CurrTexelPos.y * Texture.Width + CurrTexelPos.x]);
-                            }
-                            else
-                            {
-                                TexelColors[TexelId] = ColorU32ToRgb(Sampler.BorderColor);
-                            }
-                        }
-
-                        f32 S = TexelV2.x - floorf(TexelV2.x);
-                        f32 K = TexelV2.y - floorf(TexelV2.y);
-
-                        v3 Interpolated0 = Lerp(TexelColors[0], TexelColors[1], S);
-                        v3 Interpolated1 = Lerp(TexelColors[2], TexelColors[3], S);
-                        v3 FinalColor = Lerp(Interpolated0, Interpolated1, K);
-
-                        TexelColor = ColorRgbToU32(FinalColor);
-                    } break;
-
-                    default:
-                    {
-                        InvalidCodePath;
-                    }
-                    }
-
-                    GlobalState.FrameBufferPixels[PixelId] = TexelColor;
-                    GlobalState.DepthBuffer[PixelId] = DepthZ;
-                }
-                
-            }
-
-            Edge0 += Edge0DiffX;
-            Edge1 += Edge1DiffX;
-            Edge2 += Edge2DiffX;
-        }
-
-        Edge0RowY += Edge0DiffY;
-        Edge1RowY += Edge1DiffY;
-        Edge2RowY += Edge2DiffY;
-        
-    }
-#else
 
     Vertex0.Pos.w = 1.0f / Vertex0.Pos.w;
     Vertex1.Pos.w = 1.0f / Vertex1.Pos.w;
@@ -223,15 +59,11 @@ void DrawTriangle(clip_vertex Vertex0, clip_vertex Vertex1, clip_vertex Vertex2,
     i32 MinY = min(min((i32)PointAF.y, (i32)PointBF.y), (i32)PointCF.y);
     i32 MaxY = max(max((i32)round(PointAF.y), (i32)round(PointBF.y)), (i32)round(PointCF.y));
 
-#if 0
+#if 1
     MinX = max(0, MinX);
     MinX = min(GlobalState.FrameBufferWidth - 1, MinX);
     MaxX = max(0, MaxX);
     MaxX = min(GlobalState.FrameBufferWidth - 1, MaxX);
-    MinY = max(0, MinY);
-    MinY = min(GlobalState.FrameBufferHeight - 1, MinY);
-    MaxY = max(0, MaxY);
-    MaxY = min(GlobalState.FrameBufferHeight - 1, MaxY);
 #endif
 
     v2i PointA = V2I_F24_8(PointAF);
@@ -246,117 +78,147 @@ void DrawTriangle(clip_vertex Vertex0, clip_vertex Vertex1, clip_vertex Vertex2,
     b32 IsTopLeft1 = (Edge1.y > 0) || (Edge1.x > 0 && Edge1.y == 0);
     b32 IsTopLeft2 = (Edge2.y > 0) || (Edge2.x > 0 && Edge2.y == 0);
 
-    f32 BaryCentricDiv = f32(CrossProduct2d(PointB - PointA, PointC - PointA)) / 256.0f;
-    BaryCentricDiv = 1.0f / BaryCentricDiv;
+    f32_x4 BaryCentricDiv = F32X4(256.0f / (f32)(CrossProduct2d(PointB - PointA, PointC - PointA)));
 
-    i32 Edge0DiffX = Edge0.y;
-    i32 Edge1DiffX = Edge1.y;
-    i32 Edge2DiffX = Edge2.y;
+    i32_x4 Edge0DiffX = I32X4(Edge0.y);
+    i32_x4 Edge1DiffX = I32X4(Edge1.y);
+    i32_x4 Edge2DiffX = I32X4(Edge2.y);
 
-    i32 Edge0DiffY = -Edge0.x;
-    i32 Edge1DiffY = -Edge1.x;
-    i32 Edge2DiffY = -Edge2.x;
+    i32_x4 Edge0DiffY = I32X4 (- Edge0.x);
+    i32_x4 Edge1DiffY = I32X4 (- Edge1.x);
+    i32_x4 Edge2DiffY = I32X4 (- Edge2.x);
 
-    v2i StartPos = V2I_F24_8(V2(MinX, MinY) + V2(0.5f, 0.5f));
-    i64 Edge0RowY64 = CrossProduct2d(StartPos - PointA, Edge0);
-    i64 Edge1RowY64 = CrossProduct2d(StartPos - PointB, Edge1);
-    i64 Edge2RowY64 = CrossProduct2d(StartPos - PointC, Edge2);
+    i32_x4 Edge0RowY = {};
+    i32_x4 Edge1RowY = {};
+    i32_x4 Edge2RowY = {};
 
-    i32 Edge0RowY = i32((Edge0RowY64 + Sign(Edge0RowY64) * 128) / 256) - (IsTopLeft0 ? 0 : -1);
-    i32 Edge1RowY = i32((Edge1RowY64 + Sign(Edge1RowY64) * 128) / 256) - (IsTopLeft1 ? 0 : -1);
-    i32 Edge2RowY = i32((Edge2RowY64 + Sign(Edge2RowY64) * 128) / 256) - (IsTopLeft2 ? 0 : -1);
+    {
+        v2i StartPos = V2I_F24_8(V2(MinX, MinY) + V2(0.5f, 0.5f));
+        i64 Edge0RowY64 = CrossProduct2d(StartPos - PointA, Edge0);
+        i64 Edge1RowY64 = CrossProduct2d(StartPos - PointB, Edge1);
+        i64 Edge2RowY64 = CrossProduct2d(StartPos - PointC, Edge2);
+
+        i32 Edge0RowY32 = i32((Edge0RowY64 + Sign(Edge0RowY64) * 128) / 256) - (IsTopLeft0 ? 0 : -1);
+        i32 Edge1RowY32 = i32((Edge1RowY64 + Sign(Edge1RowY64) * 128) / 256) - (IsTopLeft1 ? 0 : -1);
+        i32 Edge2RowY32 = i32((Edge2RowY64 + Sign(Edge2RowY64) * 128) / 256) - (IsTopLeft2 ? 0 : -1);
+
+        Edge0RowY = I32X4(Edge0RowY32) + I32X4(0, 1, 2, 3) * Edge0DiffX;
+        Edge1RowY = I32X4(Edge1RowY32) + I32X4(0, 1, 2, 3) * Edge1DiffX;
+        Edge2RowY = I32X4(Edge2RowY32) + I32X4(0, 1, 2, 3) * Edge2DiffX;
+    }
+
+    Edge0DiffX = Edge0DiffX * I32X4(4);
+    Edge1DiffX = Edge1DiffX * I32X4(4);
+    Edge2DiffX = Edge2DiffX * I32X4(4);
 
     for (i32 Y = MinY; Y <= MaxY; ++Y)
     {
-        i32 Edge0RowX = Edge0RowY;
-        i32 Edge1RowX = Edge1RowY;
-        i32 Edge2RowX = Edge2RowY;
+        i32_x4 Edge0RowX = Edge0RowY;
+        i32_x4 Edge1RowX = Edge1RowY;
+        i32_x4 Edge2RowX = Edge2RowY;
 
-        for (i32 X = MinX; X <= MaxX; ++X)
+        for (i32 X = MinX; X <= MaxX; X += 4)
         {
             /*if ((Edge0RowX > 0 || (IsTopLeft0 && Edge0RowX == 0)) &&
                 (Edge1RowX > 0 || (IsTopLeft1 && Edge1RowX == 0)) &&
                 (Edge2RowX > 0 || (IsTopLeft2 && Edge2RowX == 0)))
             {*/
-            if(Edge0RowX >= 0 && Edge1RowX >= 0 && Edge2RowX >= 0)
+            u32 PixelId = Y * GlobalState.FrameBufferStride + X;
+            i32* ColorPtr = (i32*)GlobalState.FrameBufferPixels + PixelId;
+            f32* DepthPtr = GlobalState.DepthBuffer + PixelId;
+            i32_x4 PixelColors = I32X4Load(ColorPtr);
+            f32_x4 PixelDepths = F32X4Load(DepthPtr);
+
+            i32_x4 EdgeMask = (Edge0RowX | Edge1RowX | Edge2RowX) >= 0;
+
+            if (_mm_movemask_epi8(EdgeMask.Vals))
             {
                 // NOTE: Ми у середині трикутника
-                u32 PixelId = Y * GlobalState.FrameBufferWidth + X;
 
-                f32 T0 = -f32(Edge1RowX) * BaryCentricDiv;
-                f32 T1 = -f32(Edge2RowX) * BaryCentricDiv;
-                f32 T2 = -f32(Edge0RowX) * BaryCentricDiv;
+                f32_x4 T0 = -F32X4(Edge1RowX) * BaryCentricDiv;
+                f32_x4 T1 = -F32X4(Edge2RowX) * BaryCentricDiv;
+                f32_x4 T2 = -F32X4(Edge0RowX) * BaryCentricDiv;
 
-                f32 DepthZ = T0 * Vertex0.Pos.z + T1 * Vertex1.Pos.z + T2 * Vertex2.Pos.z;
-                if (DepthZ >= 0.0f && DepthZ <= 1.0f && DepthZ < GlobalState.DepthBuffer[PixelId])
+                f32_x4 DepthZ = T0 * Vertex0.Pos.z + T1 * Vertex1.Pos.z + T2 * Vertex2.Pos.z;
+
+                i32_x4 DepthMask = I32X4ReInterpret(DepthZ < PixelDepths);
+
+                f32_x4 OneOverW = T0 * Vertex0.Pos.w + T1 * Vertex1.Pos.w + T2 * Vertex2.Pos.w;
+
+                v2_x4 Uv = T0 * Vertex0.Uv + T1 * Vertex1.Uv + T2 * Vertex2.Uv;
+                Uv = Uv / OneOverW;
+
+                i32_x4 TexelColor = I32X4(0);
+                switch (Sampler.Type)
                 {
-                    f32 OneOverW = T0 * Vertex0.Pos.w + T1 * Vertex1.Pos.w + T2 * Vertex2.Pos.w;
+                case SamplerType_Nearest:
+                {
+                    i32_x4 TexelX = I32X4(Floor(Uv.x * (Texture.Width - 1)));
+                    i32_x4 TexelY = I32X4(Floor(Uv.y * (Texture.Height - 1)));
 
-                    v2 Uv = T0 * Vertex0.Uv + T1 * Vertex1.Uv + T2 * Vertex2.Uv;
-                    Uv /= OneOverW;
+                    i32_x4 TexelMask = (TexelX >= 0 & TexelX < Texture.Width &
+                        TexelY >= 0 & TexelY < Texture.Height);
 
-                    u32 TexelColor = 0;
-                    switch (Sampler.Type)
+                    TexelX = Max(Min(TexelX, Texture.Width - 1), 0);
+                    TexelY = Max(Min(TexelY, Texture.Height - 1), 0);
+
+                    i32_x4 TexelOffsets = TexelY * Texture.Width + TexelX;
+
+                    i32_x4 TrueCase = I32X4Gather((i32*)Texture.Texels, TexelOffsets);
+                    i32_x4 FalseCase = I32X4(0xFF00FF00);
+
+                    TexelColor = (TrueCase & TexelMask) + AndNot(TexelMask, FalseCase);
+                } break;
+
+                case SamplerType_Bilinear:
+                {
+                    v2_x4 TexelV2 = Uv * V2(Texture.Width, Texture.Height) - V2(0.5f, 0.5f);
+                    v2i_x4 TexelPos[4] = {};
+                    TexelPos[0] = V2IX4(Floor(TexelV2.x), Floor(TexelV2.y));
+                    TexelPos[1] = TexelPos[0] + V2I(1, 0);
+                    TexelPos[2] = TexelPos[0] + V2I(0, 1);
+                    TexelPos[3] = TexelPos[0] + V2I(1, 1);
+
+                    v3_x4 TexelColors[4] = {};
+                    for (u32 TexelId = 0; TexelId < ArrayCount(TexelPos); ++TexelId)
                     {
-                    case SamplerType_Nearest:
-                    {
-                        i32 TexelX = (i32)floorf(Uv.x * (Texture.Width - 1));
-                        i32 TexelY = (i32)floorf(Uv.y * (Texture.Height - 1));
-                        if (TexelX >= 0 && TexelX < Texture.Width &&
-                            TexelY >= 0 && TexelY < Texture.Height)
-                        {
-                            TexelColor = Texture.Texels[TexelY * Texture.Width + TexelX];
-                        }
-                        else
-                        {
-                            TexelColor = 0xFF00FF00;
-                        }
-                    } break;
+                        v2i_x4 CurrTexelPos = TexelPos[TexelId];
+                        i32_x4 TexelMask = (CurrTexelPos.x >= 0 & CurrTexelPos.x < Texture.Width &
+                            CurrTexelPos.y >= 0 & CurrTexelPos.y < Texture.Height);
 
-                    case SamplerType_Bilinear:
-                    {
-                        v2 TexelV2 = Uv * V2(Texture.Width, Texture.Height) - V2(0.5f, 0.5f);
-                        v2i TexelPos[4] = {};
-                        TexelPos[0] = V2I(floorf(TexelV2.x), floorf(TexelV2.y));
-                        TexelPos[1] = TexelPos[0] + V2I(1, 0);
-                        TexelPos[2] = TexelPos[0] + V2I(0, 1);
-                        TexelPos[3] = TexelPos[0] + V2I(1, 1);
+                        CurrTexelPos.x = Max(Min(CurrTexelPos.x, Texture.Width - 1), 0);
+                        CurrTexelPos.y = Max(Min(CurrTexelPos.y, Texture.Height - 1), 0);
+                        i32_x4 TexelOffsets = CurrTexelPos.y * Texture.Width + CurrTexelPos.x;
 
-                        v3 TexelColors[4] = {};
-                        for (u32 TexelId = 0; TexelId < ArrayCount(TexelPos); ++TexelId)
-                        {
-                            v2i CurrTexelPos = TexelPos[TexelId];
-                            if (CurrTexelPos.x >= 0 && CurrTexelPos.x < Texture.Width &&
-                                CurrTexelPos.y >= 0 && CurrTexelPos.y < Texture.Height)
-                            {
-                                TexelColors[TexelId] = ColorU32ToRgb(Texture.Texels[CurrTexelPos.y * Texture.Width + CurrTexelPos.x]);
-                            }
-                            else
-                            {
-                                TexelColors[TexelId] = ColorU32ToRgb(Sampler.BorderColor);
-                            }
-                        }
+                        i32_x4 TrueCase = I32X4Gather((i32*)Texture.Texels, TexelOffsets);
+                        i32_x4 FalseCase = I32X4(Sampler.BorderColor);
+                        i32_x4 TexelColorI32 = (TrueCase & TexelMask) + AndNot(TexelMask, FalseCase);
 
-                        f32 S = TexelV2.x - floorf(TexelV2.x);
-                        f32 K = TexelV2.y - floorf(TexelV2.y);
-
-                        v3 Interpolated0 = Lerp(TexelColors[0], TexelColors[1], S);
-                        v3 Interpolated1 = Lerp(TexelColors[2], TexelColors[3], S);
-                        v3 FinalColor = Lerp(Interpolated0, Interpolated1, K);
-
-                        TexelColor = ColorRgbToU32(FinalColor);
-                    } break;
-
-                    default:
-                    {
-                        InvalidCodePath;
-                    }
+                        TexelColors[TexelId] = ColorI32ToRgb(TexelColorI32);
                     }
 
-                    GlobalState.FrameBufferPixels[PixelId] = TexelColor;
-                    GlobalState.DepthBuffer[PixelId] = DepthZ;
+                    f32_x4 S = TexelV2.x - Floor(TexelV2.x);
+                    f32_x4 K = TexelV2.y - Floor(TexelV2.y);
+
+                    v3_x4 Interpolated0 = Lerp(TexelColors[0], TexelColors[1], S);
+                    v3_x4 Interpolated1 = Lerp(TexelColors[2], TexelColors[3], S);
+                    v3_x4 FinalColor = Lerp(Interpolated0, Interpolated1, K);
+
+                    TexelColor = ColorRgbToI32(FinalColor);
+                } break;
+
+                default:
+                {
+                    InvalidCodePath;
+                }
                 }
 
+                i32_x4 FinalMaskI32 = EdgeMask & DepthMask;
+                f32_x4 FinalMaskF32 = F32X4ReInterpret(FinalMaskI32);
+                i32_x4 OutputColors = (TexelColor & FinalMaskI32) + AndNot(FinalMaskI32, PixelColors);
+                f32_x4 OutputDepths = (DepthZ & FinalMaskF32) + AndNot(FinalMaskF32, PixelDepths);
+                I32X4Store(ColorPtr, OutputColors);
+                F32X4Store(DepthPtr, OutputDepths);
             }
 
             Edge0RowX += Edge0DiffX;
@@ -367,9 +229,8 @@ void DrawTriangle(clip_vertex Vertex0, clip_vertex Vertex1, clip_vertex Vertex2,
         Edge0RowY += Edge0DiffY;
         Edge1RowY += Edge1DiffY;
         Edge2RowY += Edge2DiffY;
-
     }
-#endif
+
 }
 
 void DrawTriangle(v4 ModelVertex0, v4 ModelVertex1, v4 ModelVertex2,
@@ -471,12 +332,13 @@ int APIENTRY WinMain(HINSTANCE hInstance,
         Assert(GetClientRect(GlobalState.WindowHandle, &ClientRect));
         GlobalState.FrameBufferWidth = ClientRect.right - ClientRect.left;
         GlobalState.FrameBufferHeight = ClientRect.bottom - ClientRect.top;
-
+ 
         GlobalState.FrameBufferWidth = 600;
+        GlobalState.FrameBufferStride = GlobalState.FrameBufferWidth + 3;
         GlobalState.FrameBufferHeight = 600;
-        GlobalState.FrameBufferPixels = (u32*)malloc(sizeof(u32) * GlobalState.FrameBufferWidth *
+        GlobalState.FrameBufferPixels = (u32*)malloc(sizeof(u32) * GlobalState.FrameBufferStride *
             GlobalState.FrameBufferHeight);
-        GlobalState.DepthBuffer = (f32*)malloc(sizeof(f32) * GlobalState.FrameBufferWidth *
+        GlobalState.DepthBuffer = (f32*)malloc(sizeof(f32) * GlobalState.FrameBufferStride *
             GlobalState.FrameBufferHeight);
     }
 
@@ -486,7 +348,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
         Sampler.Type = SamplerType_Bilinear;
         Sampler.BorderColor = 0xFF000000;
 
-        u32 BlockSize = 8;
+        u32 BlockSize = 4;
         u32 NumBlocks = 8;
 
         CheckerBoardTexture.Width = BlockSize * NumBlocks;
@@ -579,7 +441,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
         {
             for (u32 X = 0; X < GlobalState.FrameBufferWidth; ++X)
             {
-                u32 PixelId = Y * GlobalState.FrameBufferWidth + X;
+                u32 PixelId = Y * GlobalState.FrameBufferStride + X;
 
                 u8 Red = (u8)0;
                 u8 Green = (u8)0;
@@ -745,7 +607,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
         m4 Transform = (PerspectiveMatrix(60.0f, AspectRatio, 0.01f, 1000.0f) *
             CameraTransform *
             TranslationMatrix(0, 0, 2) *
-            RotationMatrix(0, 0, 0) *
+            RotationMatrix(0, GlobalState.CurrTime, 0) *
             ScaleMatrix(1, 1, 1));
 
         v4* TransformedVertices = (v4*)malloc(sizeof(v4) * ArrayCount(ModelVertices));
@@ -771,7 +633,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
         BITMAPINFO BitmapInfo = {};
         BitmapInfo.bmiHeader.biSize = sizeof(tagBITMAPINFOHEADER);
-        BitmapInfo.bmiHeader.biWidth = GlobalState.FrameBufferWidth;
+        BitmapInfo.bmiHeader.biWidth = GlobalState.FrameBufferStride;
         BitmapInfo.bmiHeader.biHeight = GlobalState.FrameBufferHeight;
         BitmapInfo.bmiHeader.biPlanes = 1;
         BitmapInfo.bmiHeader.biBitCount = 32;
@@ -796,3 +658,5 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
     return 0;
 }
+
+// MAKEINTRESOURCEA(32512)
