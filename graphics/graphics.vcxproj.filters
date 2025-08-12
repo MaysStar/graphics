@@ -24,6 +24,9 @@
     <ClCompile Include="clipper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="assets.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="win32_graphics.h">
@@ -36,6 +39,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="base_def.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="assets.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

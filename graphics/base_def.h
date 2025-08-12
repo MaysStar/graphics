@@ -11,7 +11,8 @@
 #include <pmmintrin.h>
 #include <tmmintrin.h>
 #include <smmintrin.h>
-#include < nmmintrin.h>
+#include <nmmintrin.h>
+#include <string>
 
 typedef int8_t i8;
 typedef int16_t i16;
