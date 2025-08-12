@@ -2,13 +2,7 @@
 
 #include "base_def.h"
 #include "clipper.h"
-
-struct texture
-{
-    u32 Width;
-    u32 Height;
-    u32* Texels;
-};
+#include "assets.h"
 
 enum sampler_type
 {
@@ -53,6 +47,11 @@ struct global_state
     b32 ADown;
     b32 SDown;
     b32 DDown;
+
+    model CubeModel;
+    model DuckModel;
+    model FoxModel;
+    model SponzaModel;
 };
 
 #define WIN32_GRAPHICS_H

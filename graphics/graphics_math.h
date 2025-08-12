@@ -157,6 +157,7 @@ v2i operator-(v2i, v2i);
 i64 Sign(i64);
 
 v3 V3(f32, f32, f32);
+v3 V3(f32);
 v3 operator+(v3, v3);
 v3 operator-(v3, v3);
 v3 operator*(f32, v3);
@@ -193,7 +194,7 @@ i32_x4 I32X4(i32);
 i32_x4 I32X4(f32, f32, f32, f32);
 f32_x4 operator-(f32_x4);
 f32_x4 operator+(f32_x4, f32_x4);
-f32_x4 operator+(f32_x4, f32_x4);
+f32_x4 operator+(f32, f32_x4);
 f32_x4 operator-(f32_x4, f32_x4);
 f32_x4 operator-(f32, f32_x4);
 f32_x4 operator*(f32_x4, f32_x4);
@@ -235,9 +236,14 @@ v2_x4 operator*(f32_x4, v2);
 v2_x4 operator*(v2_x4, v2);
 v2_x4 operator+(v2_x4, v2_x4);
 v2_x4 operator-(v2_x4, v2);
+v2_x4 operator-(v2_x4, v2_x4);
+v2_x4 operator/(v2_x4, v2);
+v2_x4 Floor(v2_x4);
+v2_x4 V2X4(v2i_x4);
 
 v2i_x4 V2IX4(i32, i32);
 v2i_x4 V2IX4(f32_x4, f32_x4);
+v2i_x4 V2IX4(v2_x4);
 v2i_x4 operator*(v2i_x4, v2);
 v2i_x4 operator+(v2i_x4, v2i);
 
