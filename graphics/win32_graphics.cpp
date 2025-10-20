@@ -483,6 +483,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
         }
     }
 
+    InitializeGameState(&GlobalState.Game);
+
     LARGE_INTEGER BeginTime = {};
     LARGE_INTEGER EndTime = {};
     Assert(QueryPerformanceCounter(&BeginTime));
@@ -547,6 +549,68 @@ int APIENTRY WinMain(HINSTANCE hInstance,
             }
         }
 
+        UpdateGameState(&GlobalState.Game, FrameTime);
+
+        const level* ActiveLevel = GetCurrentLevel(&GlobalState.Game);
+        f32 TravelFraction = 0.0f;
+        if (ActiveLevel && ActiveLevel->TravelDistance > 0.0f)
+        {
+            TravelFraction = GlobalState.Game.Metrics.LevelProgress / ActiveLevel->TravelDistance;
+            if (TravelFraction > 1.0f)
+            {
+                TravelFraction = 1.0f;
+            }
+        }
+
+        u8 ClearRed = 0;
+        u8 ClearGreen = 0;
+        u8 ClearBlue = 0;
+
+        if (ActiveLevel)
+        {
+            const boss* ActiveBoss = &ActiveLevel->Boss;
+
+            i32 RedValue = 20 + ActiveBoss->DifficultyTier * 45;
+            i32 GreenValue = 25 + (i32)(TravelFraction * 160.0f);
+            i32 BlueValue = 35 + (3 - ActiveBoss->DifficultyTier) * 30;
+
+            if (GlobalState.Game.EncounterState == EncounterState_BossFight)
+            {
+                f32 BossHealthFraction = 1.0f;
+                if (ActiveBoss->MaxHealth > 0.0f)
+                {
+                    BossHealthFraction = ActiveBoss->CurrentHealth / ActiveBoss->MaxHealth;
+                }
+
+                RedValue = 120 + ActiveBoss->DifficultyTier * 40;
+                GreenValue = (i32)(15 + BossHealthFraction * 100.0f);
+                BlueValue = (i32)(20 + (1.0f - BossHealthFraction) * 30.0f);
+            }
+            else if (GlobalState.Game.EncounterState == EncounterState_LevelComplete)
+            {
+                RedValue = 50;
+                GreenValue = 110 + ActiveBoss->DifficultyTier * 20;
+                BlueValue = 80;
+            }
+
+            if (RedValue > 255) { RedValue = 255; }
+            if (GreenValue > 255) { GreenValue = 255; }
+            if (BlueValue > 255) { BlueValue = 255; }
+            if (RedValue < 0) { RedValue = 0; }
+            if (GreenValue < 0) { GreenValue = 0; }
+            if (BlueValue < 0) { BlueValue = 0; }
+
+            ClearRed = (u8)RedValue;
+            ClearGreen = (u8)GreenValue;
+            ClearBlue = (u8)BlueValue;
+        }
+        else if (GlobalState.Game.EncounterState == EncounterState_GameComplete)
+        {
+            ClearRed = 12;
+            ClearGreen = 18;
+            ClearBlue = 42;
+        }
+
         // NOTE: Очистуємо буфер кадри до 0
         for (u32 Y = 0; Y < GlobalState.FrameBufferHeight; ++Y)
         {
@@ -554,9 +618,9 @@ int APIENTRY WinMain(HINSTANCE hInstance,
             {
                 u32 PixelId = Y * GlobalState.FrameBufferStride + X;
 
-                u8 Red = (u8)0;
-                u8 Green = (u8)0;
-                u8 Blue = 0;
+                u8 Red = ClearRed;
+                u8 Green = ClearGreen;
+                u8 Blue = ClearBlue;
                 u8 Alpha = 255;
                 u32 PixelColor = ((u32)Alpha << 24) | ((u32)Red << 16) | ((u32)Green << 8) | (u32)Blue;
 
@@ -661,14 +725,54 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
         //GlobalState.CurrTime = 0;
 
-        f32 Offset = abs(sin(GlobalState.CurrTime));
-        m4 Transform = (PerspectiveMatrix(60.0f, AspectRatio, 0.01f, 1000.0f) *
-            CameraTransform *
+        m4 ProjectionView = PerspectiveMatrix(60.0f, AspectRatio, 0.01f, 1000.0f) *
+            CameraTransform;
+
+        m4 EnvironmentTransform = ProjectionView *
             TranslationMatrix(0, 0, 1) *
             RotationMatrix(0, Pi32 * 0.5f, 0) *
-            ScaleMatrix(1, 1, 1));        
+            ScaleMatrix(1, 1, 1);
 
-        DrawModel(&GlobalState.SponzaModel, Transform, Sampler);
+        DrawModel(&GlobalState.SponzaModel, EnvironmentTransform, Sampler);
+
+        if (ActiveLevel)
+        {
+            const boss* ActiveBoss = &ActiveLevel->Boss;
+
+            f32 BossScale = 0.75f + 0.25f * (f32)ActiveBoss->DifficultyTier;
+
+            if (GlobalState.Game.EncounterState == EncounterState_Exploration && TravelFraction < 1.0f)
+            {
+                f32 Visibility = 0.3f + 0.7f * TravelFraction;
+                BossScale *= Visibility;
+            }
+            else if (GlobalState.Game.EncounterState == EncounterState_BossIntro)
+            {
+                f32 IntroT = GlobalState.Game.Metrics.TimeInState / 2.0f;
+                if (IntroT > 1.0f)
+                {
+                    IntroT = 1.0f;
+                }
+                BossScale *= (0.4f + 0.6f * IntroT);
+            }
+            else if (GlobalState.Game.EncounterState == EncounterState_LevelComplete)
+            {
+                f32 Fade = 1.0f - (GlobalState.Game.Metrics.TimeInState / 3.0f);
+                if (Fade < 0.0f)
+                {
+                    Fade = 0.0f;
+                }
+                BossScale *= (0.3f + 0.7f * Fade);
+            }
+
+            f32 BobOffset = 0.15f * sinf(GlobalState.CurrTime * 1.5f);
+            m4 BossTransform = ProjectionView *
+                TranslationMatrix(0.0f, BobOffset, 3.0f) *
+                RotationMatrix(0.0f, GlobalState.CurrTime, 0.0f) *
+                ScaleMatrix(BossScale, BossScale, BossScale);
+
+            DrawModel(&GlobalState.CubeModel, BossTransform, Sampler);
+        }
 
         BITMAPINFO BitmapInfo = {};
         BitmapInfo.bmiHeader.biSize = sizeof(tagBITMAPINFOHEADER);

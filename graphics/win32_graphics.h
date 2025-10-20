@@ -3,6 +3,7 @@
 #include "base_def.h"
 #include "clipper.h"
 #include "assets.h"
+#include "game.h"
 
 enum sampler_type
 {
@@ -52,6 +53,8 @@ struct global_state
     model DuckModel;
     model FoxModel;
     model SponzaModel;
+
+    game_state Game;
 };
 
 #define WIN32_GRAPHICS_H
